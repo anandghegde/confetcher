@@ -1,0 +1,73 @@
+### Confetcher - Go - Concurrent Crawler
+
+Install the go compiler first - http://golang.org/doc/install
+
+This crawler (creatively named concurrent_crawler.go :P )  takes a file containing the urls to crawl as input
+
+You can also specify the maximum number of workers/goroutines (By default it is set to 3)
+
+<pre>
+go build -o concurrent_crawler concurrent_crawler.go
+</pre>
+
+Run it using - 
+
+<pre>
+./concurrent_crawler -i input_file -m 4
+</pre>
+
+-m is the maximum number of workers flag
+
+
+Brief Explanation -
+
+Go has solid support for coroutine-style threading, with explicit communication between the threads. You can start a new thread by invoking a function: just prefix the invocation with the word “go”.So if “fetch()” is a  function call; “go fetch()” (kind of like how you'd tell your dog ) is an invocation of a goroutine, which runs concurrently with the code that called it.
+
+Once you’ve created a go-routine, you can only talk to it through channels. Channels support two operations: output, and input. Any channel operation blocks until a matching operation is executed by a different goroutine. So writing to a channel blocks until someone reads it; reading from a channel blocks until someone writes something for you to read. You can only pass a single type of value over a channel. Goroutines are very cheap and lightweight, and they’re mapped onto OS threads. So you don’t need to worry (much) about creating lots of goroutines. ( Creating hundreds of thousands of goroutines is very normal in go - according to the documentation :P )
+
+Here is a brief explanation of some of the functions used in the code - 
+
+
+<pre>
+// Run represents a number of functions running concurrently.
+type Run struct 
+</pre>
+
+<pre>
+// NewRun returns a new parallel instance.  It will run up to maxPar
+// functions concurrently.
+func NewRun(maxPar int) *Run 
+</pre>
+
+<pre>
+// Do requests that are run concurrently.  If there are already the maximum
+// number of functions running concurrently, it will block until one of
+// them has completed. 
+func (r *Run) Do(f func() error) 
+</pre>
+
+<pre>
+// Wait waits for all the functions to complete.  
+//If any errors were encountered, it returns an
+// Errors value describing all the errors in arbitrary order.
+func (r *Run) Wait() error 
+</pre>
+
+Below is the part of the code that handles the fetchin and saving part.
+
+<pre>
+response, err := http.Get(url)
+			if err != nil {
+				return nil
+			}
+			responseString, err := ioutil.ReadAll(response.Body)
+			response.Body.Close()
+			err = ioutil.WriteFile(outputFile, responseString, 0644)
+			fmt.Printf("Finished fetching url%s\n", url)
+			return err
+
+</pre>
+
+The output is saved in files named file0, file1, file2 etc in the same directory
+
+
